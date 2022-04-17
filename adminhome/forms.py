@@ -3,6 +3,7 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.core.exceptions import ValidationError
 from .models import ParkingSpot, ParkingCategory
 from django.contrib.auth.models import User
+from django.forms import formset_factory
 
 class CustomUserForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
@@ -26,17 +27,19 @@ class CustomUserCreationForm(UserCreationForm):
         fields = ('first_name', 'last_name', 'email', 'username')
         # field_classes = {"username": UsernameField}
 
-
-class HomeForm(forms.Form):
+class AboutUsForm(forms.Form):
     def __init__(self, *args, **kwargs):
         extra = kwargs.pop('extra')
-        super(HomeForm, self).__init__(*args, **kwargs)
-
+        super(AboutUsForm, self).__init__(*args, **kwargs)
         self.fields["about_header"] = forms.CharField(label='About Us Header', initial=extra["about"]["about_header"],
                                                       widget=forms.TextInput(attrs={'class': 'form-control'}))
         self.fields["about_body"] = forms.CharField(label='About Us Body', initial=extra["about"]["about_body"],
                                                     widget=forms.Textarea(attrs={'class': 'form-control'}))
 
+class AmenetiesForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        extra = kwargs.pop('extra')
+        super(AmenetiesForm, self).__init__(*args, **kwargs)
         self.fields["ameneties_header"] = forms.CharField(label='Ameneties Header',
                                                           initial=extra["ameneties"]["ameneties_header"],
                                                           widget=forms.TextInput(attrs={'class': 'form-control'}))
@@ -44,12 +47,32 @@ class HomeForm(forms.Form):
                                                         initial=extra["ameneties"]["ameneties_body"],
                                                         widget=forms.Textarea(attrs={'class': 'form-control'}))
 
+
+class ContactUsForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        extra = kwargs.pop('extra')
+        super(ContactUsForm, self).__init__(*args, **kwargs)
         self.fields["phone"] = forms.CharField(label='Phone', initial=extra["contact"]["phone"],
                                                widget=forms.TextInput(attrs={'class': 'form-control'}))
         self.fields["email"] = forms.CharField(label='Email', initial=extra["contact"]["email"],
                                                widget=forms.TextInput(attrs={'class': 'form-control'}))
         self.fields["location"] = forms.CharField(label='Location', initial=extra["contact"]["location"],
                                                   widget=forms.TextInput(attrs={'class': 'form-control'}))
+
+class CarouselForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        extra = kwargs.pop('extra')
+        super(CarouselFormSet, self).__init__(*args, **kwargs)
+        self.fields['carousel_header'] = forms.CharField(label=('Carousel Header: '), widget=forms.TextInput(attrs={'class': 'form-control'}))
+        self.fields['carousel_body'] = forms.CharField(label=('Carousel Contents: '), widget=forms.Textarea(attrs={'class': 'form-control'}))
+        self.fields['carousel_image'] = forms.ImageField(label=('Carousel Image: '), required=False)
+
+CarouselFormSet2 = forms.formset_factory(CarouselForm, extra=3)
+
+class CarouselFormSet(forms.Form):
+    def __init__(self, *args, **kwargs):
+        extra = kwargs.pop('extra')
+        super(CarouselFormSet, self).__init__(*args, **kwargs)
 
         for i, c in enumerate(extra["carousel"]):
             self.fields['carousel_header_%s' % i] = forms.CharField(label=('Carousel %s Header: ' % (i + 1)),

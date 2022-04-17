@@ -9,8 +9,8 @@ from django.shortcuts import get_object_or_404, render
 from django.views import generic
 from django.urls import reverse
 
-from .forms import ParkingCategoryForm, ParkingSpotForm, HomeForm, CustomUserForm, \
-    CustomUserCreationForm, DateRangeForm
+from .forms import ParkingCategoryForm, ParkingSpotForm, DateRangeForm, CustomUserForm, \
+    CustomUserCreationForm, CarouselFormSet, AboutUsForm, ContactUsForm, AmenetiesForm
 import boto3
 
 from django.shortcuts import render, redirect
@@ -230,37 +230,90 @@ def adminhome(request):
     return render(request, "adminhome/adminhome.html")
 
 
-def edithome(request):
+def editcarousel(request):
     if (not (request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser))):
         return HttpResponseRedirect(reverse('adminhome:index'))
-    return render(request, "adminhome/edithome.html",
-                  {"form": HomeForm(request.POST or None, extra=get_home_metedata())})
+    return render(request, "adminhome/editcarousel.html",
+                  {"form": CarouselFormSet(request.POST or None, extra=get_home_metadata())})
 
 
-def doedit(request):
+def editcontactus(request):
     if (not (request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser))):
         return HttpResponseRedirect(reverse('adminhome:index'))
-    preview_home_metadata = {}
-    preview_home_metadata['about'] = {}
-    preview_home_metadata['about']['about_header'] = request.POST['about_header']
-    preview_home_metadata['about']['about_body'] = request.POST['about_body']
+    return render(request, "adminhome/editcontactus.html",
+                  {"form": ContactUsForm(request.POST or None, extra=get_home_metadata())})
 
-    preview_home_metadata['ameneties'] = {}
-    preview_home_metadata['ameneties']['ameneties_header'] = request.POST['ameneties_header']
-    preview_home_metadata['ameneties']['ameneties_body'] = request.POST['ameneties_body']
 
-    preview_home_metadata['contact'] = {}
-    preview_home_metadata['contact']['phone'] = request.POST['phone']
-    preview_home_metadata['contact']['email'] = request.POST['email']
-    preview_home_metadata['contact']['location'] = request.POST['location']
+def editaboutus(request):
+    if (not (request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser))):
+        return HttpResponseRedirect(reverse('adminhome:index'))
+    return render(request, "adminhome/editaboutus.html",
+                  {"form": AboutUsForm(request.POST or None, extra=get_home_metadata())})
 
-    preview_home_metadata['carousel'] = [{} for i in range(3)]
-    for i, c in enumerate(request.POST):
-        if (c.startswith('carousel_header')):
-            preview_home_metadata['carousel'][int(c.split('_')[-1])]['header'] = request.POST[c]
-        if (c.startswith('carousel_body')):
-            preview_home_metadata['carousel'][int(c.split('_')[-1])]['body'] = request.POST[c]
+def ediameneties(request):
+    if (not (request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser))):
+        return HttpResponseRedirect(reverse('adminhome:index'))
+    return render(request, "adminhome/ediameneties.html",
+                  {"form": AmenetiesForm(request.POST or None, extra=get_home_metadata())})
 
+def doedit(request, type: str):
+    if (not (request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser))):
+        return HttpResponseRedirect(reverse('adminhome:index'))
+    metadata = get_home_metadata()
+    
+    if(type == 'about_us'):
+        metadata['about']['about_header'] = request.POST['about_header']
+        metadata['about']['about_body'] = request.POST['about_body']
+        update_s3_metadata(metadata)
+        return HttpResponseRedirect(reverse('adminhome:editaboutus'))
+
+    if(type == 'ameneties'):
+        metadata['ameneties']['ameneties_header'] = request.POST['ameneties_header']
+        metadata['ameneties']['ameneties_body'] = request.POST['ameneties_body']
+        update_s3_metadata(metadata)
+        return HttpResponseRedirect(reverse('adminhome:editameneties'))
+
+    if(type == 'contact_us'):
+        metadata['contact']['phone'] = request.POST['phone']
+        metadata['contact']['email'] = request.POST['email']
+        metadata['contact']['location'] = request.POST['location']
+        update_s3_metadata(metadata)
+        return HttpResponseRedirect(reverse('adminhome:editcontactus'))
+
+    if(type == 'carousel'):
+        metadata['carousel'] = [{} for i in range(3)]
+        for i, c in enumerate(request.POST):
+            if (c.startswith('carousel_header')):
+                metadata['carousel'][int(c.split('_')[-1])]['header'] = request.POST[c]
+            if (c.startswith('carousel_body')):
+                metadata['carousel'][int(c.split('_')[-1])]['body'] = request.POST[c]
+        session = boto3.Session(
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_REGION_NAME,
+        )
+
+        s3 = session.resource('s3')
+
+        sobj = s3.Object(settings.AWS_BUCKET_NAME, settings.AWS_HOME_METADATA_KEY)
+
+        sobj.put(
+            Body=(bytes(json.dumps(metadata).encode('UTF-8')))
+        )
+
+        for i, c in enumerate(request.FILES):
+            s3.Bucket(settings.AWS_BUCKET_NAME).put_object(Key=('media/%s.jpg' % c), Body=request.FILES[c])
+
+        return HttpResponseRedirect(reverse('adminhome:editcarousel'))
+
+def index(request):
+    return render(request, "adminhome/index.html", {"metadata": get_home_metadata()})
+
+
+def get_home_metadata():
+    return requests.get('https://d1dmjo0dbygy5s.cloudfront.net/home_metadata.json').json()
+
+def update_s3_metadata(metadata):
     session = boto3.Session(
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
@@ -272,21 +325,8 @@ def doedit(request):
     sobj = s3.Object(settings.AWS_BUCKET_NAME, settings.AWS_HOME_METADATA_KEY)
 
     sobj.put(
-        Body=(bytes(json.dumps(preview_home_metadata).encode('UTF-8')))
+        Body=(bytes(json.dumps(metadata).encode('UTF-8')))
     )
-
-    for i, c in enumerate(request.FILES):
-        s3.Bucket(settings.AWS_BUCKET_NAME).put_object(Key=('media/%s.jpg' % c), Body=request.FILES[c])
-
-    return HttpResponseRedirect(reverse('adminhome:edithome'))
-
-
-def index(request):
-    return render(request, "adminhome/index.html", {"metadata": get_home_metedata()})
-
-
-def get_home_metedata():
-    return requests.get('https://d1dmjo0dbygy5s.cloudfront.net/home_metadata.json').json()
 
 def userhome(request):
     if (not request.user.is_authenticated):

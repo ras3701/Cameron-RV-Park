@@ -17,8 +17,11 @@ urlpatterns = [
     path('adminhome/', views.adminhome, name='adminhome'),
     path('userhome/', views.userhome, name='userhome'),
 
-    path('edithome/', views.edithome, name='edithome'),
-    path('doedit/', views.doedit, name='doedit'),
+    path('adminhome/editcarousel/', views.editcarousel, name='editcarousel'),
+    path('adminhome/editaboutus/', views.editaboutus, name='editaboutus'),
+    path('adminhome/ediameneties/', views.ediameneties, name='ediameneties'),
+    path('adminhome/editcontactus/', views.editcontactus, name='editcontactus'),
+    path('doedit/<str:type>', views.doedit, name='doedit'),
 
     path('parkingspot/create/', views.createparkingspot, name='createparkingspot'),
     path('parkingspot/', views.viewparkingspot, name='viewparkingspot'),
