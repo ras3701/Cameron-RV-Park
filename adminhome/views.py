@@ -26,6 +26,10 @@ from .filters import ParkingCatergoryFilter, ParkingSpotFilter, BookingFilter, P
 from .forms import BookingForm, ParkingCategoryForm, ParkingSpotForm, HomeForm, CustomUserForm, \
                    CustomUserCreationForm, DateRangeForm
 
+from notifications.signals import notify
+from django.contrib.auth.models import User
+
+
 
 ################################################################################################################
 #                                       USER AUTHENTICATION                                                    #
@@ -45,6 +49,10 @@ def signin(request):
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
             user = authenticate(username=username, password=password)
+            # superusers = User.objects.filter(is_superuser=True)
+            message = "This is a simple message"
+            notify.send(sender=user, recipient=user, verb='Message',
+            description=message)
             if user is not None:
                 login(request, user)
                 if request.user.is_staff or request.user.is_superuser:
@@ -73,6 +81,16 @@ def signup(request):
                   template_name="adminhome/signup.html",
                   context={"form": form})
 
+################################################################################################################
+#                                             USER HOME                                                        #
+################################################################################################################
+
+def notifications(request):
+    if (not request.user.is_authenticated):
+        return HttpResponseRedirect(reverse('adminhome:userhome'))
+    if (request.user.is_staff or request.user.is_superuser):
+        return HttpResponseRedirect(reverse('adminhome:adminhome'))
+    return render(request, "adminhome/notifications.html")
 
 ################################################################################################################
 #                                           PARKING SPOT                                                       #
@@ -485,3 +503,4 @@ def checkavailability(request):
                         'end_date': end_date,
                     }
                 )
+

@@ -44,4 +44,11 @@ urlpatterns = [
 
     path('userhome/addvehicle', views.addvehicle, name='addvehicle'),
     path('userhome/editvehicle', views.editvehicle, name='editvehicle'),
+
+    path('userhome/notifications', views.notifications, name='notifications'),
+
+    # path('inbox/notifications/', include(notifications.urls, namespace='notifications')),
+    # path( "/dashboard",
+    #     TemplateView.as_view(template_name="layouts/dashboard.html"),
+    #     name="dashboard",
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
