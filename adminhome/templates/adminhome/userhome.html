@@ -4,18 +4,5 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
 	<h1 class="h2">User Home Page - Welcome {{ user }}</h1>
 </div>
-{% for notification in  user.notifications.unread %}
-<table>
-	
-	<div>
-		<tr bgcolor="#ddd"></tr>
-        <b>{{ notification.description }}</b>
-		<br>
-		Message from <b>{{ notification.actor }}</b> 
-	</tr>
-	</div>
-</table>
-
-{% endfor %} 
 
 {% endblock content %}
