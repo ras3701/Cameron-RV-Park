@@ -27,7 +27,6 @@ from .forms import BookingForm, ParkingCategoryForm, ParkingSpotForm, HomeForm, 
                    CustomUserCreationForm, DateRangeForm
 
 from notifications.signals import notify
-from django.contrib.auth.models import User
 
 
 
@@ -49,10 +48,8 @@ def signin(request):
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
             user = authenticate(username=username, password=password)
-            # superusers = User.objects.filter(is_superuser=True)
-            message = "This is a simple message"
-            notify.send(sender=user, recipient=user, verb='Message',
-            description=message)
+            notify.send(sender= user, recipient=user, verb='Message',
+            description='You logged in as '+ str(user))
             if user is not None:
                 login(request, user)
                 if request.user.is_staff or request.user.is_superuser:
@@ -73,8 +70,10 @@ def signup(request):
             username = form.cleaned_data.get('username')
             messages.success(request, f"Created New Account: {username}")
             login(request, user)
+            notify.send(sender= user, recipient=user, verb='Message',
+            description='You signed up as '+ str(user))
             messages.info(request, f"you are now logged in as {username}")
-            return redirect("adminhome:index")
+            return redirect("adminhome:userhome")
     else:
         form = CustomUserCreationForm
     return render(request=request,
@@ -85,12 +84,12 @@ def signup(request):
 #                                             USER HOME                                                        #
 ################################################################################################################
 
-def notifications(request):
+def user_notifications(request):
     if (not request.user.is_authenticated):
         return HttpResponseRedirect(reverse('adminhome:userhome'))
     if (request.user.is_staff or request.user.is_superuser):
         return HttpResponseRedirect(reverse('adminhome:adminhome'))
-    return render(request, "adminhome/notifications.html")
+    return render(request, "adminhome/user_notifications.html")
 
 ################################################################################################################
 #                                           PARKING SPOT                                                       #
@@ -460,6 +459,8 @@ def addvehicle(request):
             vehicle.user_id_id = request.user.id
             vehicle.insurance_doc.name = '{}'.format(vehicle.uuid)
             vehicle.save()
+            notify.send(sender= request.user, recipient = request.user, verb='Message',
+            description='You have registered a new vehicle')
             return HttpResponseRedirect(reverse('adminhome:userhome'))
     else:
         form = VehicleForm
