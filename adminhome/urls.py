@@ -2,7 +2,11 @@ from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 
+import notifications.urls
+from django.conf.urls import include
+
 from . import views
+from django.views.generic import TemplateView
 
 app_name = 'adminhome'
 urlpatterns = [
@@ -45,10 +49,10 @@ urlpatterns = [
     path('userhome/addvehicle', views.addvehicle, name='addvehicle'),
     path('userhome/editvehicle', views.editvehicle, name='editvehicle'),
 
-    path('userhome/notifications', views.notifications, name='notifications'),
-
+    path('userhome/user_notifications', views.user_notifications, name='user_notifications'),
     # path('inbox/notifications/', include(notifications.urls, namespace='notifications')),
     # path( "/dashboard",
-    #     TemplateView.as_view(template_name="layouts/dashboard.html"),
-    #     name="dashboard",
+    #     TemplateView.as_view(template_name="dashboard.html"),
+    #     name="dashboard",)
+
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
