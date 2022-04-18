@@ -13,6 +13,7 @@
 	<link rel="stylesheet" type="text/css" href="{% static 'adminhome/admin_base.css' %}">
 	<link rel="stylesheet" type="text/css" href="{% static 'adminhome/sidebar.css' %}"> 
 	<link rel="stylesheet" type="text/css" href="{% static 'adminhome/card.css' %}">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
 <body>
 	<header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow"> <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">Cameron RV Park</a>
@@ -20,6 +21,9 @@
 		<div class="form-control form-control-dark w-100">User Home</div>
 		<div class="navbar-nav">
 			<div class="nav-item text-nowrap">
+				<a href ="{% url 'adminhome:user_notifications' %}">
+				<button type="button" class="btn btn-outline-light me-2" id="id_sign_out_button" >Notifications <i class="fa fa-bell"></i></button>
+				</a>
 				<a href="{% url 'adminhome:signout' %}">
 					<button type="button" class="btn btn-outline-light me-2" id="id_sign_out_button">Sign Out</button>
 				</a>
