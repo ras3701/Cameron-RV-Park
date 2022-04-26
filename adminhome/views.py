@@ -31,9 +31,9 @@ from .forms import BookingForm, ParkingCategoryForm, ParkingSpotForm, HomeForm, 
                    CustomUserCreationForm, CheckAvailabilityDateRangeForm, VehicleChangeForm, BillDetailForm, \
                    PaymentForm, ShowSheduleDateRangeForm
 from .enums import BookingStates, ViewBookings
-from .utils import isPreviousBooking, isCurrentBooking
+from .utils import isPreviousBooking, isCurrentBooking, TIME_ZONE, CHECK_IN_TIME, CHECK_OUT_TIME
 
-from datetime import date
+from datetime import date, timedelta
 from fpdf import FPDF
 import string
 
@@ -316,6 +316,8 @@ def create_booking(request, vehicle_id, parking_category_id, start_date, end_dat
     pc = ParkingCategory.objects.get(id=parking_category_id)
     booking = Booking(vehicle_id=vehicle, pc_id=pc, state=BookingStates.NEW, start_time=start_date,
                           end_time=end_date, lease_doc_url='', lease_is_signed_by_user=False, admin_comments='')
+    booking.start_time += CHECK_IN_TIME
+    booking.end_time += CHECK_OUT_TIME
 
     if (request.method == "POST"):
         booking.state = BookingStates.PENDING_LEASE

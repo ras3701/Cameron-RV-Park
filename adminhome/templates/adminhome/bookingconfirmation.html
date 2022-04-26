@@ -26,29 +26,36 @@
 			<tbody>
 				<tr>
 					<td style="font-weight: bold">Vehicle Name</td>
-                     <td>{{ booking.vehicle_id.name }}</td>
+               <td>{{ booking.vehicle_id.name }}</td>
             </tr>
             <tr>
                   <td style="font-weight: bold">Parking Category ID</td>
-                     <td>{{ booking.pc_id.id }}</td>
+                  <td>{{ booking.pc_id.id }}</td>
             </tr>
             <tr>
-                  <td style="font-weight: bold">Start Date</td>
-                     <td>{{ booking.start_time }}</td>
+                  <td style="font-weight: bold">Start Date (Check-In Time)</td>
+                  <td>{{ booking.start_time }}</td>
             </tr>
             <tr>
-                  <td style="font-weight: bold">End Date</td>
-                     <td>{{ booking.end_time }}</td>
+                  <td style="font-weight: bold">End Date (Check-Out Time)</td>
+                  <td>{{ booking.end_time }}</td>
 				</tr>
 			</tbody>
 		   </table>
 		</div>
 
-      <div class="container">
-         <form method="POST">
-            {% csrf_token %}
-            <input type="submit" value="Submit" class="btn btn-outline-dark shadow-2 mb-4" style=""\>
-         </form>
-     </div>
+      <div class="card-body"> 
+         <div>
+            <a href="{% url 'adminhome:checkavailability' %}" class="btn btn-outline-dark shadow-2 mb-4">
+               Cancel Booking
+            </a>
+         </div>
+         <div>
+            <form method="POST">
+               {% csrf_token %}
+               <input type="submit" value="Create Booking" class="btn btn-outline-dark shadow-2 mb-4" style=""\>
+            </form>
+         </div>
+      </div>
    </body>
 </html>
