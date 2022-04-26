@@ -856,8 +856,104 @@ class TestParkingSpotView(TestCase):
         ParkingSpot.objects.all().delete()
 
 
+class TestViewProfile(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(username='user', password='pass')
+        self.super_user = User.objects.create_superuser(username='useradmin', password='passadmin')
+        self.vehicle_one = Vehicle.objects.create(name='vehicle 1', user_id=self.user, insurance_doc='doc_url_one')
+        self.vehicle_two = Vehicle.objects.create(name='vehicle 2', user_id=self.user, insurance_doc='doc_url_one')
+
+    def test_view_profile_unauthenticated_user(self):
+        request = self.factory.get(reverse('adminhome:viewprofile'))
+        request.user = AnonymousUser()
+        response = viewprofile(request)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertURLEqual(response.url, '/')
+
+    def test_view_profile_admin(self):
+        self.client.login(username='useradmin', password='passadmin')
+
+        request = self.factory.get(reverse('adminhome:viewprofile'))
+        request.user = self.super_user
+        response = viewprofile(request)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertURLEqual(response.url, '/')
+
+    def test_view_profile_user(self):
+        self.client.login(username='user', password='pass')
+
+        response = self.client.get(reverse('adminhome:viewprofile'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'adminhome/user_viewprofile.html')
+        self.assertEqual(response.context['user'], self.user)
+        self.assertQuerysetEqual(response.context['vehicles'], self.user.vehicle_set.all(), ordered=False)
+
+
+class TestEditProfile(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(username='user', password='pass')
+        self.super_user = User.objects.create_superuser(username='useradmin', password='passadmin')
+        self.vehicle_one = Vehicle.objects.create(name='vehicle 1', user_id=self.user, insurance_doc='doc_url_one')
+        self.vehicle_two = Vehicle.objects.create(name='vehicle 2', user_id=self.user, insurance_doc='doc_url_one')
+
+    def test_edit_profile_unauthenticated_user(self):
+        request = self.factory.post(reverse('adminhome:editprofile'))
+        request.user = AnonymousUser()
+
+        response = editprofile(request)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertURLEqual(response.url, '/')
+
+    def test_edit_profile_admin(self):
+        self.client.login(username='useradmin', password='passadmin')
+        request = self.factory.post(reverse('adminhome:editprofile'))
+        request.user = self.super_user
+
+        response = editprofile(request)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertURLEqual(response.url, '/')
+
+    def test_edit_profile_user_with_get(self):
+        self.client.login(username='user', password='pass')
+
+        response = self.client.get(reverse('adminhome:editprofile'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'adminhome/user_editprofile.html')
+        self.assertIsInstance(response.context['form'], CustomUserChangeForm)
+
+    def test_edit_profile_user_with_post_when_form_is_valid(self):
+        self.client.login(username='user', password='pass')
+
+        metadata = {"username": "updated_username"}
+        request = self.factory.post(reverse('adminhome:editprofile'), metadata)
+        request.user = self.user
+
+        response = editprofile(request)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertURLEqual(response.url, '/userhome/viewprofile')
+        self.assertEqual(self.user.username, "updated_username")
+
+    def test_edit_profile_user_with_post_when_form_is_invalid(self):
+        self.client.login(username='user', password='pass')
+
+        response = self.client.post(reverse('adminhome:editprofile'), data={})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'adminhome/user_editprofile.html')
+        self.assertIsInstance(response.context['form'], CustomUserChangeForm)
+
+
 # model Tests
-class TesetParkingSpotModel(TestCase):
+class TestParkingSpotModel(TestCase):
 
     def test_parking_spot_model(self):
         parking_category = ParkingCategory.objects.create(name="pc_1", size=1, daily_rate=1,
@@ -875,7 +971,7 @@ class TesetParkingSpotModel(TestCase):
         self.assertEqual(str(parking_spot), parking_spot.name)
 
 
-class TesetParkingCategoryModel(TestCase):
+class TestParkingCategoryModel(TestCase):
 
     def test_parking_category_model(self):
         parking_category = ParkingCategory.objects.create(name="pc_1", size=1, daily_rate=1,
