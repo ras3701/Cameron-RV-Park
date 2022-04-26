@@ -12,6 +12,8 @@ from http import HTTPStatus
 import os
 import boto3, botocore
 from moto import mock_s3
+from io import BytesIO
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 
 @mock_s3
@@ -950,6 +952,236 @@ class TestEditProfile(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'adminhome/user_editprofile.html')
         self.assertIsInstance(response.context['form'], CustomUserChangeForm)
+
+
+class ChangePassword(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(username='user', password='pass')
+        self.vehicle = Vehicle.objects.create(name="name", user_id=self.user, make="make", model="model", build="build",
+                                              color="color", is_verified=True)
+        self.super_user = User.objects.create_superuser(username='useradmin', password='passadmin')
+
+    def test_change_password_unauthenticated_user(self):
+        request = self.factory.post(reverse('adminhome:changepassword'))
+        request.user = AnonymousUser()
+
+        response = changepassword(request)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertURLEqual(response.url, '/')
+
+    def test_change_password_admin(self):
+        self.client.login(username='useradmin', password='passadmin')
+        request = self.factory.post(reverse('adminhome:changepassword'))
+        request.user = self.super_user
+
+        response = changepassword(request)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertURLEqual(response.url, '/')
+
+    def test_change_password_user_with_get(self):
+        self.client.login(username='user', password='pass')
+
+        response = self.client.get(reverse('adminhome:changepassword'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'adminhome/user_changepassword.html')
+
+    def test_change_password_user_with_post_when_form_is_invalid(self):
+        self.client.login(username='user', password='pass')
+
+        response = self.client.post(reverse('adminhome:changepassword'), data={})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'adminhome/user_changepassword.html')
+
+    def test_change_password_user_with_post_when_form_is_valid(self):
+        self.client.login(username='user', password='pass')
+
+        metadata = {'old_password': 'pass', 'new_password1': 'new_pass', 'new_password2': 'new_pass' }
+        response = self.client.post(reverse('adminhome:changepassword'), data=metadata)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertURLEqual(response.url, '/userhome/viewprofile')
+
+
+class TestAddVehicle(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(username='user', password='pass')
+        self.super_user = User.objects.create_superuser(username='useradmin', password='passadmin')
+
+    def test_add_vehicle_unauthenticated_user(self):
+        request = self.factory.post(reverse('adminhome:addvehicle'))
+        request.user = AnonymousUser()
+
+        response = addvehicle(request)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertURLEqual(response.url, '/')
+
+    def test_add_vehicle_admin(self):
+        self.client.login(username='useradmin', password='passadmin')
+        request = self.factory.post(reverse('adminhome:addvehicle'))
+        request.user = self.super_user
+
+        response = addvehicle(request)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertURLEqual(response.url, '/')
+
+    def test_add_vehicle_user_with_get(self):
+        self.client.login(username='user', password='pass')
+
+        response = self.client.get(reverse('adminhome:addvehicle'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'adminhome/user_addvehicle.html')
+        self.assertEquals(response.context['form'], VehicleForm)
+
+    def test_add_vehicle_user_with_post_when_form_is_valid(self):
+        self.client.login(username='user', password='pass')
+
+        insurance_file = BytesIO(b"dummy data: \x00\x01")
+        insurance_file.name = 'insurance.pdf'
+
+        metadata = {"name": "vehicle", "model": "model", "make": "make", "build": "build", "color": "color",
+                    "insurance_doc": SimpleUploadedFile(insurance_file.name, insurance_file.read())}
+        request = self.factory.post(reverse('adminhome:addvehicle'), data=metadata)
+        request.user = self.user
+
+        response = addvehicle(request)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertURLEqual(response.url, '/userhome/')
+        vehicle_added = Vehicle.objects.get(user_id_id=self.user.id)
+        self.assertEqual(vehicle_added.name, 'vehicle')
+        self.assertEqual(vehicle_added.model, 'model')
+        self.assertEqual(vehicle_added.make, 'make')
+        self.assertEqual(vehicle_added.is_verified, False)
+
+    def test_add_vehicle_user_with_post_when_form_is_invalid(self):
+        self.client.login(username='user', password='pass')
+
+        response = self.client.post(reverse('adminhome:addvehicle'), data={})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'adminhome/user_addvehicle.html')
+        self.assertIsInstance(response.context['form'], VehicleForm)
+
+
+class TestEditVehicle(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(username='user', password='pass')
+        self.unauthorized_user = User.objects.create_user(username='unauthorized_user', password='pass')
+        self.vehicle = Vehicle.objects.create(name="name", user_id=self.user, make="make", model="model", build="build",
+                                              color="color", is_verified=True)
+        self.super_user = User.objects.create_superuser(username='useradmin', password='passadmin')
+
+    def test_edit_vehicle_unauthenticated_user(self):
+        request = self.factory.post(reverse('adminhome:editvehicle', kwargs={'pk': self.vehicle.id}))
+        request.user = AnonymousUser()
+
+        response = editvehicle(request, self.vehicle.id)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertURLEqual(response.url, '/')
+
+    def test_edit_vehicle_admin(self):
+        self.client.login(username='useradmin', password='passadmin')
+        request = self.factory.post(reverse('adminhome:editvehicle', kwargs={'pk': self.vehicle.id}))
+        request.user = self.super_user
+
+        response = editvehicle(request, self.vehicle.id)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertURLEqual(response.url, '/')
+
+    def test_edit_vehicle_unauthorized_vehicle(self):
+        self.client.login(username='unauthorized_user', password='pass')
+        request = self.factory.post(reverse('adminhome:editvehicle', kwargs={'pk': self.vehicle.id}))
+        request.user = self.unauthorized_user
+
+        response = editvehicle(request, self.vehicle.id)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertURLEqual(response.url, '/')
+
+    def test_edit_vehicle_user_with_get(self):
+        self.client.login(username='user', password='pass')
+
+        response = self.client.get(reverse('adminhome:editvehicle', kwargs={'pk': self.vehicle.id}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'adminhome/user_editvehicle.html')
+        self.assertIsInstance(response.context['form'], VehicleChangeForm)
+
+    def test_edit_vehicle_user_with_post_when_form_is_valid(self):
+        self.client.login(username='user', password='pass')
+
+        insurance_file = BytesIO(b"dummy data: \x00\x01")
+        insurance_file.name = 'insurance.pdf'
+
+        metadata = {"name": "vehicle updated", "model": "model", "make": "make", "build": "build", "color": "color",
+                    "insurance_doc": SimpleUploadedFile(insurance_file.name, insurance_file.read())}
+        response = self.client.post(reverse('adminhome:editvehicle', kwargs={'pk': self.vehicle.id}), data=metadata)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertURLEqual(response.url, '/userhome/viewprofile')
+        vehicle_edited = Vehicle.objects.get(user_id_id=self.user.id)
+        self.assertEqual(vehicle_edited.name, 'vehicle updated')
+        self.assertEqual(vehicle_edited.is_verified, False)
+
+    def test_edit_vehicle_user_with_post_when_form_is_invalid(self):
+        self.client.login(username='user', password='pass')
+
+        response = self.client.post(reverse('adminhome:editvehicle', kwargs={'pk': self.vehicle.id}), data={})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'adminhome/user_editvehicle.html')
+        self.assertIsInstance(response.context['form'], VehicleChangeForm)
+
+
+class TestVerifyVehicle(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(username='user', password='pass')
+        self.vehicle = Vehicle.objects.create(name="name", user_id=self.user, make="make", model="model", build="build",
+                                              color="color", is_verified=False)
+        self.super_user = User.objects.create_superuser(username='useradmin', password='passadmin')
+
+    def test_verify_vehicle_unauthenticated_user(self):
+        request = self.factory.post(reverse('adminhome:verifyvehicle', kwargs={'pk': self.vehicle.id}))
+        request.user = AnonymousUser()
+
+        response = verifyvehicle(request, self.vehicle.id)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertURLEqual(response.url, '/')
+
+    def test_verify_vehicle_admin(self):
+        self.client.login(username='user', password='pass')
+        request = self.factory.post(reverse('adminhome:verifyvehicle', kwargs={'pk': self.vehicle.id}))
+        request.user = self.user
+
+        response = verifyvehicle(request, self.vehicle.id)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertURLEqual(response.url, '/')
+
+    def test_verify_vehicle_admin_with_post_when_form_is_valid(self):
+        self.client.login(username='useradmin', password='passadmin')
+
+        metadata = {"insurance_expiry_date": datetime.combine(datetime.strptime("2022-04-26", '%Y-%m-%d'),datetime.min.time())}
+        response = self.client.post(reverse('adminhome:verifyvehicle', kwargs={'pk': self.vehicle.id}), data=metadata)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertURLEqual(response.url, '/adminhome/unverifiedvehicles')
+        verified_vehicle = Vehicle.objects.get(user_id_id=self.user.id)
+        self.assertEqual(verified_vehicle.is_verified, True)
 
 
 # model Tests
