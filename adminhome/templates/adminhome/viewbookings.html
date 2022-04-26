@@ -9,15 +9,18 @@
       <h1 class="h2">View Current Bookings</h1>
    {% elif bookingsType == 'previous_bookings' %}
       <h1 class="h2">View Previous Bookings</h1>
-   {% else %}
+   {% elif bookingsType == 'all_bookings' %}
       <h1 class="h2">View All Bookings</h1>
+   {% elif bookingsType == 'user_approved_bookings' %}
+      <h1 class="h2">View Approved Bookings</h1>
+   {% else %}
+      <h1 class="h2">View Unapproved Bookings</h1>
    {% endif %}
 </div>
 
 <form method="get">
    <div class="container">
       {{filter.form.as_p}}
-      <!-- TODO: Add Date option for start_time -->
       <input type="submit" value="Filter" class="btn btn-outline-dark shadow-2 mb-4" style="max-width: 10rem;"/>
    </div>
 </form>

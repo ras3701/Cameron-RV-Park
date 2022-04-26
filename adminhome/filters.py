@@ -61,6 +61,14 @@ class AllBookingFilter(django_filters.FilterSet):
         model = Booking
         fields = ('parking_cat_name', 'parking_spot_name', 'is_lease_signed_by_user', 'booking_state', 'username', 'vehicle_name', 'start_date', 'end_date',)
 
+class UserBookingFilter(django_filters.FilterSet):
+    parking_spot_name = django_filters.AllValuesFilter(label='Parking Spot Name', field_name='parking_spot_id__name')
+    vehicle_name = django_filters.CharFilter(label='Vehicle Name', field_name='vehicle_id__name')
+
+    class Meta:
+        model = Booking
+        fields = ('parking_spot_name', 'vehicle_name',)    
+
 
 class UnverifiedVehiclesFilter(django_filters.FilterSet):
     username = django_filters.CharFilter(label='Username', field_name='user_id__username')

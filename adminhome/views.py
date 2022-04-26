@@ -14,6 +14,7 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404, render
 from django.views import View, generic
 from django.urls import reverse
+from django.db.models import Q
 
 from .forms import ParkingCategoryForm, ParkingSpotForm, HomeForm, CustomUserForm, \
     CustomUserCreationForm, VehicleForm, VerifyVehicleForm, CustomUserChangeForm, UserPasswordChangeForm
@@ -26,7 +27,7 @@ from django.contrib.auth import login, logout, authenticate, update_session_auth
 from django.contrib import messages
 
 from .models import Booking, ParkingSpot, ParkingCategory, Vehicle, BillDetail, Payment
-from .filters import ParkingCatergoryFilter, ParkingSpotFilter, BookingFilter, PreviousAndCurrentBookingFilter, AllBookingFilter, UnverifiedVehiclesFilter
+from .filters import ParkingCatergoryFilter, ParkingSpotFilter, BookingFilter, PreviousAndCurrentBookingFilter, AllBookingFilter, UnverifiedVehiclesFilter, UserBookingFilter
 from .forms import BookingForm, ParkingCategoryForm, ParkingSpotForm, HomeForm, CustomUserForm, \
                    CustomUserCreationForm, CheckAvailabilityDateRangeForm, VehicleChangeForm, BillDetailForm, \
                    PaymentForm, ShowSheduleDateRangeForm
@@ -261,14 +262,17 @@ def viewbookings(request, bookingsType):
 
     if (not (request.user.is_staff or request.user.is_superuser)):
         if (bookingsType == ViewBookings.UPCOMING_BOOKINGS):
-            bookings_list = BookingFilter(request.GET, queryset=Booking.objects.filter(start_time__gte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)), vehicle_id__user_id=request.user))
+            bookings_list = UserBookingFilter(request.GET, queryset=Booking.objects.filter(start_time__gte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)), vehicle_id__user_id=request.user))
         elif (bookingsType == ViewBookings.PREVIOUS_BOOKINGS):
-            bookings_list = PreviousAndCurrentBookingFilter(request.GET, queryset=Booking.objects.filter(end_time__lt=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)), vehicle_id__user_id=request.user))
+            bookings_list = UserBookingFilter(request.GET, queryset=Booking.objects.filter(end_time__lt=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)), vehicle_id__user_id=request.user))
         elif (bookingsType == ViewBookings.CURRENT_BOOKINGS):
-            bookings_list = PreviousAndCurrentBookingFilter(request.GET, queryset=
+            bookings_list = UserBookingFilter(request.GET, queryset=
                                     Booking.objects.filter(start_time__lte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)), end_time__gte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)), vehicle_id__user_id=request.user))
+        elif (bookingsType == ViewBookings.USER_APPROVED_BOOKINGS):
+            bookings_list = UserBookingFilter(request.GET, queryset=Booking.objects.filter(vehicle_id__user_id=request.user, state=(BookingStates.APPROVED, BookingStates.PAID, BookingStates.UNPAID)))
         else:
-            bookings_list = AllBookingFilter(request.GET, queryset=Booking.objects.filter(vehicle_id__user_id=request.user))
+            # TODO
+            bookings_list = UserBookingFilter(request.GET, queryset=Booking.objects.filter(vehicle_id__user_id=request.user).exclude(state=(BookingStates.APPROVED, BookingStates.PAID, BookingStates.UNPAID)))
     else:
         if (bookingsType == ViewBookings.UPCOMING_BOOKINGS):
             bookings_list = BookingFilter(request.GET, queryset=Booking.objects.filter(start_time__gte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE))))
@@ -308,7 +312,29 @@ def viewcurrentbookings(request):
 
 
 def viewallbookings(request):
+    # NOTE: Only admin should be allowed to view all bookings.
+    if (not (request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser))):
+        return HttpResponseRedirect(reverse('adminhome:index'))
+
     return viewbookings(request, ViewBookings.ALL_BOOKINGS)
+
+
+def viewuserapprovedbookings(request):
+    if (not (request.user.is_authenticated)):
+        return signin(request)
+    if(request.user.is_staff or request.user.is_superuser):         # NOTE: Only user should be able to view Approved Bookings.
+        return HttpResponseRedirect(reverse('adminhome:index'))
+    
+    return viewbookings(request, ViewBookings.USER_APPROVED_BOOKINGS)
+
+
+def viewuserunapprovedbookings(request):
+    if (not (request.user.is_authenticated)):
+        return signin(request)
+    if(request.user.is_staff or request.user.is_superuser):         # NOTE: Only user should be able to view Unapproved Bookings.
+        return HttpResponseRedirect(reverse('adminhome:index'))
+    
+    return viewbookings(request, ViewBookings.USER_UNAPPROVED_BOOKINGS)
 
 
 def create_booking(request, vehicle_id, parking_category_id, start_date, end_date):

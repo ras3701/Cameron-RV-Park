@@ -15,7 +15,7 @@ class BookingStates(models.TextChoices):
     CANCELED_BEFORE_LEASE = 'canceled_before_lease', _('Canceled Before Lease')
     CANCELED = 'canceled', _('Canceled Booking')
     PAID = 'paid', _('Paid Booking')
-    # UNPAID = 'unpaid', _('Unpaid Booking')
+    UNPAID = 'unpaid', _('Unpaid Booking')
 
 class PaymentStatus(models.TextChoices):
     PAID = 'paid', _('Paid')
@@ -31,3 +31,5 @@ class ViewBookings(models.TextChoices):
     PREVIOUS_BOOKINGS = 'previous_bookings', _('Previous Bookings')
     CURRENT_BOOKINGS = 'current_bookings', _('Current Bookings')
     ALL_BOOKINGS = 'all_bookings', _('All Bookings')
+    USER_APPROVED_BOOKINGS = 'user_approved_bookings', _('User Approved Bookings')
+    USER_UNAPPROVED_BOOKINGS = 'user_unapproved_bookings', _('User Unapproved Bookings')
