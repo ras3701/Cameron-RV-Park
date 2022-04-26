@@ -7,8 +7,10 @@
       <h1 class="h2">View Upcoming Bookings</h1>
    {% elif bookingsType == 'current_bookings' %}
       <h1 class="h2">View Current Bookings</h1>
-   {% else %}
+   {% elif bookingsType == 'previous_bookings' %}
       <h1 class="h2">View Previous Bookings</h1>
+   {% else %}
+      <h1 class="h2">View All Bookings</h1>
    {% endif %}
 </div>
 

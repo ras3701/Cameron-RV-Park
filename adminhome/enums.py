@@ -30,3 +30,4 @@ class ViewBookings(models.TextChoices):
     UPCOMING_BOOKINGS = 'upcoming_bookings', _('Upcoming Bookings')
     PREVIOUS_BOOKINGS = 'previous_bookings', _('Previous Bookings')
     CURRENT_BOOKINGS = 'current_bookings', _('Current Bookings')
+    ALL_BOOKINGS = 'all_bookings', _('All Bookings')

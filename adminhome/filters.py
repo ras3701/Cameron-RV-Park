@@ -37,6 +37,12 @@ class PreviousAndCurrentBookingFilter(django_filters.FilterSet):
         model = Booking
         fields = ('parking_spot_id', 'state', 'vehicle_id__user_id',)
 
+class AllBookingFilter(django_filters.FilterSet):
+
+    class Meta:
+        model = Booking
+        fields = ('pc_id', 'parking_spot_id', 'lease_is_signed_by_user', 'start_time', 'end_time', 'state', 'vehicle_id__user_id', 'vehicle_id',)
+
 class UnverifiedVehiclesFilter(django_filters.FilterSet):
 
     class Meta:

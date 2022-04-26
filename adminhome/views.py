@@ -26,12 +26,12 @@ from django.contrib.auth import login, logout, authenticate, update_session_auth
 from django.contrib import messages
 
 from .models import Booking, ParkingSpot, ParkingCategory, Vehicle, BillDetail, Payment
-from .filters import ParkingCatergoryFilter, ParkingSpotFilter, BookingFilter, PreviousAndCurrentBookingFilter, UnverifiedVehiclesFilter
+from .filters import ParkingCatergoryFilter, ParkingSpotFilter, BookingFilter, PreviousAndCurrentBookingFilter, AllBookingFilter, UnverifiedVehiclesFilter
 from .forms import BookingForm, ParkingCategoryForm, ParkingSpotForm, HomeForm, CustomUserForm, \
                    CustomUserCreationForm, CheckAvailabilityDateRangeForm, VehicleChangeForm, BillDetailForm, \
                    PaymentForm, ShowSheduleDateRangeForm
 from .enums import BookingStates, ViewBookings
-from .utils import isPreviousBooking, isCurrentBooking, TIME_ZONE, CHECK_IN_TIME, CHECK_OUT_TIME
+from .utils import isPreviousBooking, isCurrentBooking, TIME_ZONE, CHECK_IN_TIME, CHECK_OUT_TIME, PYTZ_TIMEZONE
 
 from datetime import date, timedelta
 from fpdf import FPDF
@@ -261,28 +261,24 @@ def viewbookings(request, bookingsType):
 
     if (not (request.user.is_staff or request.user.is_superuser)):
         if (bookingsType == ViewBookings.UPCOMING_BOOKINGS):
-            bookings_list = BookingFilter(request.GET, queryset=
-            Booking.objects.filter(start_time__gte=datetime.datetime.now(), vehicle_id__user_id=request.user))
+            bookings_list = BookingFilter(request.GET, queryset=Booking.objects.filter(start_time__gte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)), vehicle_id__user_id=request.user))
         elif (bookingsType == ViewBookings.PREVIOUS_BOOKINGS):
+            bookings_list = PreviousAndCurrentBookingFilter(request.GET, queryset=Booking.objects.filter(end_time__lt=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)), vehicle_id__user_id=request.user))
+        elif (bookingsType == ViewBookings.CURRENT_BOOKINGS):
             bookings_list = PreviousAndCurrentBookingFilter(request.GET, queryset=
-            Booking.objects.filter(end_time__lt=datetime.datetime.now(), vehicle_id__user_id=request.user))
+                                    Booking.objects.filter(start_time__lte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)), end_time__gte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)), vehicle_id__user_id=request.user))
         else:
-            bookings_list = PreviousAndCurrentBookingFilter(request.GET, queryset=
-            Booking.objects.filter(start_time__lte=datetime.datetime.now(), end_time__gte=datetime.datetime.now(),
-                                   vehicle_id__user_id=request.user))
+            bookings_list = AllBookingFilter(request.GET, queryset=Booking.objects.filter(vehicle_id__user_id=request.user))
     else:
         if (bookingsType == ViewBookings.UPCOMING_BOOKINGS):
-            bookings_list = BookingFilter(request.GET,
-                                          queryset=Booking.objects.filter(start_time__gte=datetime.datetime.now()))
+            bookings_list = BookingFilter(request.GET, queryset=Booking.objects.filter(start_time__gte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE))))
         elif (bookingsType == ViewBookings.PREVIOUS_BOOKINGS):
-            bookings_list = PreviousAndCurrentBookingFilter(request.GET, queryset=Booking.objects.filter(
-                end_time__lt=datetime.datetime.now()))
-        else:
+            bookings_list = PreviousAndCurrentBookingFilter(request.GET, queryset=Booking.objects.filter(end_time__lt=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE))))
+        elif (bookingsType == ViewBookings.CURRENT_BOOKINGS):
             bookings_list = PreviousAndCurrentBookingFilter(request.GET, queryset=
-            Booking.objects.filter(start_time__lte=datetime.datetime.now(), end_time__gte=datetime.datetime.now()))
-
-    # TODO: check the datetime.now() time-zone.
-    # print("date: ", datetime.date.today())
+                                            Booking.objects.filter(start_time__lte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)), end_time__gte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE))))
+        else:
+            bookings_list = AllBookingFilter(request.GET, queryset=Booking.objects.all())
 
     page = request.GET.get('page', 1)
     paginator = Paginator(bookings_list.qs, 2)
@@ -311,6 +307,10 @@ def viewcurrentbookings(request):
     return viewbookings(request, ViewBookings.CURRENT_BOOKINGS)
 
 
+def viewallbookings(request):
+    return viewbookings(request, ViewBookings.ALL_BOOKINGS)
+
+
 def create_booking(request, vehicle_id, parking_category_id, start_date, end_date):
     vehicle = Vehicle.objects.get(id=vehicle_id)
     pc = ParkingCategory.objects.get(id=parking_category_id)
@@ -337,7 +337,7 @@ def assignslottobookings(request):
     if (not (request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser))):
         return HttpResponseRedirect(reverse('adminhome:index'))
 
-    bookings = Booking.objects.filter(state__in=[BookingStates.PENDING_APPROVAL, BookingStates.PENDING_SLOT],start_time__gte=datetime.datetime.now(pytz.timezone('US/Central'))).order_by('lease_sign_time')
+    bookings = Booking.objects.filter(state__in=[BookingStates.PENDING_APPROVAL, BookingStates.PENDING_SLOT],start_time__gte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE))).order_by('lease_sign_time')
 
     page = request.GET.get('page', 1)
     paginator = Paginator(bookings, 10)
@@ -422,7 +422,7 @@ def confirmcancelbooking(request, bk_id):
     elif (not (booking.state==BookingStates.APPROVED or booking.state==BookingStates.PAID)):
         context["error_message"] = "Booking ID#{} hasen't been approved yet.".format(booking.id)
     elif (request.method == 'POST'):
-        current_time = datetime.datetime.now(pytz.timezone('US/Central'))
+        current_time = datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE))
         bills = booking.bills.all()
         if len(bills) != 0:
             #TODO: add logic to calculate reservation cost
@@ -544,7 +544,7 @@ def generatesignedlease(booking_id):
     vehicle = booking.vehicle_id
     parking_category = booking.pc_id
     user = vehicle.user_id
-    lease_sign_time = datetime.datetime.now(pytz.timezone('US/Central'))
+    lease_sign_time = datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE))
 
     freq, price = calc_base_rent(booking)
 
@@ -982,7 +982,7 @@ def confirmassignoneslot(request, pk, ps):
         #TODO: add logic to calculate reservation cost
         reservation_cost = ((booking.end_time - booking.start_time).days)*booking.pc_id.daily_rate
         if not is_reassignnment:
-            base_bill = BillDetail(bill_date=datetime.datetime.now(pytz.timezone('US/Central')),
+            base_bill = BillDetail(bill_date=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)),
                                     reservation_cost=reservation_cost,
                                     init_meter_reading=0,
                                     utility_cost=0,
@@ -1065,7 +1065,7 @@ def addbill(request, bk_id):
         form = BillDetailForm(request.POST)
         if form.is_valid():
             bill = form.save(commit=False)
-            bill.bill_date = datetime.datetime.now(pytz.timezone('US/Central'))
+            bill.bill_date = datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE))
             bill.booking_id_id = bk_id
             bill.meter_rate = ParkingCategory.objects.get(pk=request.GET.get('pc')).utility_conversion_rate
             bill.utility_cost = (bill.end_meter_reading - bill.init_meter_reading) * bill.meter_rate
@@ -1106,7 +1106,7 @@ def addpayment(request, bk_id, bl_id):
             bill.unpaid_amount = bill.unpaid_amount - payment.amount
             bill.paid_amount = payment.amount
             bill.save()
-            payment.time = datetime.datetime.now(pytz.timezone('US/Central'))
+            payment.time = datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE))
             payment.bill = bill
             payment.save()
             return HttpResponseRedirect(reverse('adminhome:viewonebill', args=(bk_id, bl_id,)))
@@ -1140,7 +1140,7 @@ def payonline(request, bk_id, bl_id):
                 booking.state = BookingStates.PAID
                 booking.save()
             bill.save()
-            payment.time = datetime.datetime.now(pytz.timezone('US/Central'))
+            payment.time = datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE))
             payment.bill = bill
             payment.save()
             return HttpResponseRedirect(reverse('adminhome:viewonebill', args=(bk_id, bl_id,)))

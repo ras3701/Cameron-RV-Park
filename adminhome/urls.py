@@ -33,7 +33,7 @@ urlpatterns = [
     path('parkingcategory/<int:pk>/edit', views.updateparkingcategory, name='updateparkingcategory'),
     path('parkingcategory/<int:pk>/delete', views.deleteparkingcategory, name='deleteparkingcategory'),
 
-    # path('bookings/', views.userhome),
+    path('bookings/', views.viewallbookings, name='viewallbookings'),
     path('bookings/create/', views.checkavailability, name='createbooking'),
     path('bookings/<int:bk_id>/', views.viewonebooking, name='viewonebooking'),
     path('bookings/<int:bk_id>/edit/', views.editbooking, name='editbooking'),
