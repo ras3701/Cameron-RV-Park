@@ -210,7 +210,8 @@ class TestSigninView(TestCase):
         response = signin(request)
         response.client = Client()
 
-        self.assertRedirects(response, '/', 302)
+        self.assertEqual(response.status_code, 302)
+        self.assertURLEqual(response.url, '/userhome/')
 
     def test_signin_success_for_admin_or_staff(self):
         login_metadata = {"username": "superuser", "password": "superuser"}
@@ -323,7 +324,7 @@ class TestCustomUserCreationForm(TestCase):
     def test_user_creation_form_correct(self):
         user_form = CustomUserCreationForm(None)
 
-        self.assertEqual(len(user_form.visible_fields()), 3)
+        self.assertEqual(len(user_form.visible_fields()), 6)
 
     def test_user_creation_form_incorrect(self):
         try:
