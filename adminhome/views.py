@@ -802,7 +802,6 @@ def addvehicle(request):
             vehicle = form.save(commit=False)
             vehicle.user_id_id = request.user.id
             vehicle.insurance_doc.name = '{}'.format(vehicle.uuid)
-            vehicle.insurance_doc.name = '{}'.format(vehicle.uuid)
             vehicle.save()
             return HttpResponseRedirect(reverse('adminhome:userhome'))
     else:
@@ -830,8 +829,6 @@ def unverifiedvehicles(request):
         unverified_vehicles_paginated = paginator.page(page)
     except PageNotAnInteger:
         unverified_vehicles_paginated = paginator.page(1)
-    except EmptyPage:
-        unverified_vehicles_paginated = paginator.page(paginator.num_pages)
 
     return render(request, "adminhome/admin_view_unverified_vehicles.html",
                   {'filter': unverified_vehicles_list,

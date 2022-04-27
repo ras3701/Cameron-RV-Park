@@ -1162,7 +1162,7 @@ class TestVerifyVehicle(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertURLEqual(response.url, '/')
 
-    def test_verify_vehicle_admin(self):
+    def test_verify_vehicle_user(self):
         self.client.login(username='user', password='pass')
         request = self.factory.post(reverse('adminhome:verifyvehicle', kwargs={'pk': self.vehicle.id}))
         request.user = self.user
@@ -1175,13 +1175,59 @@ class TestVerifyVehicle(TestCase):
     def test_verify_vehicle_admin_with_post_when_form_is_valid(self):
         self.client.login(username='useradmin', password='passadmin')
 
-        metadata = {"insurance_expiry_date": datetime.combine(datetime.strptime("2022-04-26", '%Y-%m-%d'),datetime.min.time())}
+        metadata = {"insurance_expiry_date": datetime.combine(datetime.strptime("2022-04-26", '%Y-%m-%d'), datetime.min.time())}
         response = self.client.post(reverse('adminhome:verifyvehicle', kwargs={'pk': self.vehicle.id}), data=metadata)
 
         self.assertEqual(response.status_code, 302)
         self.assertURLEqual(response.url, '/adminhome/unverifiedvehicles')
         verified_vehicle = Vehicle.objects.get(user_id_id=self.user.id)
         self.assertEqual(verified_vehicle.is_verified, True)
+
+
+class TestUnverifiedVehicles(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(username='user', password='pass')
+        self.vehicle = Vehicle.objects.create(name="name", user_id=self.user, make="make", model="model", build="build",
+                                              color="color", is_verified=False, insurance_doc="some_doc_url")
+        self.super_user = User.objects.create_superuser(username='useradmin', password='passadmin')
+
+    def test_unverified_vehicle_unauthenticated_user(self):
+        request = self.factory.get(reverse('adminhome:unverifiedvehicles'))
+        request.user = AnonymousUser()
+
+        response = unverifiedvehicles(request)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertURLEqual(response.url, '/')
+
+    def test_unverified_vehicle_user(self):
+        self.client.login(username='user', password='pass')
+        request = self.factory.get(reverse('adminhome:unverifiedvehicles'))
+        request.user = self.user
+
+        response = unverifiedvehicles(request)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertURLEqual(response.url, '/')
+
+    def test_unverified_vehicle_admin_when_page_is_valid(self):
+        self.client.login(username='useradmin', password='passadmin')
+
+        response = self.client.get(reverse('adminhome:unverifiedvehicles'), data={'page': 1})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "adminhome/admin_view_unverified_vehicles.html")
+        self.assertEqual(response.context['form'], VerifyVehicleForm)
+
+    def test_unverified_vehicle_admin_when_page_is_not_integer(self):
+        self.client.login(username='useradmin', password='passadmin')
+
+        response = self.client.get(reverse('adminhome:unverifiedvehicles'), data={'page': 'abc'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "adminhome/admin_view_unverified_vehicles.html")
+        self.assertEqual(response.context['form'], VerifyVehicleForm)
 
 
 # model Tests
