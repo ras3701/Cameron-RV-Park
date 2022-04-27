@@ -952,6 +952,118 @@ class TestEditProfile(TestCase):
         self.assertIsInstance(response.context['form'], CustomUserChangeForm)
 
 
+class TestBooking(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.super_user = User.objects.create_superuser(username='useradmin', password='passadmin')
+        self.user = User.objects.create_user(username='user', password='pass')
+        self.parking_category = ParkingCategory.objects.create(name="pc_1", size=1.00, daily_rate=1.0,
+                                                               weekly_rate=1.0,
+                                                               monthly_rate=1.0,
+                                                               utility_conversion_rate=1.0,
+                                                               is_active=True,
+                                                               cancellation_penalty=1.0,
+                                                               cancellation_time_window=1)
+                                                
+        self.parking_spot = ParkingSpot.objects.create(name="test_spot", parking_category_id= self.parking_category,
+                                                  is_active=True)
+        self.vehicle = Vehicle.objects.create(name="name",
+                                                user_id=self.user,
+                                                make="make",
+                                                model="model",
+                                                build="build",
+                                                color="color",
+                                                is_verified=True)
+        self.booking = Booking.objects.create(vehicle_id = self.vehicle,
+                                                pc_id = self.parking_category,
+                                                parking_spot_id = self.parking_spot,
+                                                start_time = datetime.combine(datetime.strptime("2022-04-26", '%Y-%m-%d'),datetime.min.time()),
+                                                end_time = datetime.combine(datetime.strptime("2022-04-30", '%Y-%m-%d'),datetime.min.time()),
+                                                lease_sign_time = datetime.combine(datetime.strptime("2022-04-25", '%Y-%m-%d'),datetime.min.time()),
+                                                last_modified_time = datetime.combine(datetime.strptime("2022-04-25", '%Y-%m-%d'),datetime.min.time()),
+                                                last_modified_userid = self.super_user,
+                                                state = BookingStates.PENDING_SLOT,
+                                                lease_doc_url = "url",
+                                                lease_is_signed_by_user = True)
+
+            
+        self.bk_id = self.booking.id
+
+
+    def test_view_upcoming_bookings_unauthenticated_user(self):
+        request = self.factory.get(reverse('adminhome:viewupcomingbookings'))
+        request.user = AnonymousUser()
+        response = self.client.get(reverse('adminhome:viewupcomingbookings'), data={})
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'adminhome/signin.html')
+
+    def test_view_upcoming_bookings_authenticated_user(self):
+        request = self.factory.get(reverse('adminhome:viewupcomingbookings'))
+        request.user = self.super_user
+        self.client.login(username='useradmin', password='passadmin')
+        response = self.client.get(reverse('adminhome:viewupcomingbookings'), data={})
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'adminhome/viewbookings.html')
+
+    def test_view_previous_bookings_unauthenticated_user(self):
+        request = self.factory.get(reverse('adminhome:viewpreviousbookings'))
+        request.user = AnonymousUser()
+        response = self.client.get(reverse('adminhome:viewpreviousbookings'), data={})
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'adminhome/signin.html')
+
+    def test_view_previous_bookings_authenticated_user(self):
+        request = self.factory.get(reverse('adminhome:viewpreviousbookings'))
+        request.user = self.super_user
+        self.client.login(username='useradmin', password='passadmin')
+        response = self.client.get(reverse('adminhome:viewpreviousbookings'), data={})
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'adminhome/viewbookings.html')
+
+
+    def test_view_current_bookings_unauthenticated_user(self):
+        request = self.factory.get(reverse('adminhome:viewcurrentbookings'))
+        request.user = AnonymousUser()
+        response = self.client.get(reverse('adminhome:viewcurrentbookings'), data={})
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'adminhome/signin.html')
+
+    def test_view_current_bookings_authenticated_user(self):
+        request = self.factory.get(reverse('adminhome:viewcurrentbookings'))
+        request.user = self.super_user
+        self.client.login(username='useradmin', password='passadmin')
+        response = self.client.get(reverse('adminhome:viewcurrentbookings'), data={})
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'adminhome/viewbookings.html')
+
+
+    def test_viewonebooking_unauthenticated_user(self):
+        response = self.client.get(reverse('adminhome:viewonebooking', kwargs={'bk_id': self.bk_id}))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'adminhome/signin.html')
+
+    def test_viewonebooking_authenticated_user(self):
+        self.client.login(username='useradmin', password='passadmin')
+        response = self.client.get(reverse('adminhome:viewonebooking', kwargs={'bk_id': self.bk_id}))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'adminhome/viewonebooking.html')
+
+
+    def test_edit_booking_unauthenticated_user(self):
+        response = self.client.get(reverse('adminhome:editbooking', kwargs={'bk_id': self.bk_id}))
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, '/')
+
+    def test_edit_booking_authenticated_user(self):
+        self.client.login(username='useradmin', password='passadmin')
+        response = self.client.get(reverse('adminhome:editbooking', kwargs={'bk_id': self.bk_id}))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "adminhome/editbooking.html")
+        self.assertIsInstance(response.context['form'], BookingForm)
+
+
+
+
 # model Tests
 class TestParkingSpotModel(TestCase):
 
