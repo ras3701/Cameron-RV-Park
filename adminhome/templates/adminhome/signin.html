@@ -5,8 +5,9 @@
 {% endblock %}
 
 {% block buttons %}
-    <button class="w-100 btn btn-lg btn-primary mb-2" type="submit" id="id_sign_in_button">Sign in</button>
+    <button class="w-100 btn btn-lg btn-primary mb-2" type="submit" id="id_sign_in_button">Sign In</button>
     <a href="{% url 'adminhome:signup' %}">
-        <button type="button" class="w-100 btn btn-lg btn-primary mb-4" id="id_sign_up_button">Sign-up</button>
+        <button type="button" class="w-100 btn btn-lg btn-primary mb-2" id="id_sign_up_button">Sign Up</button>
     </a>
+    <button class="w-100 btn btn-lg btn-primary mb-2" type="submit" id="id_sign_in_button">Reset Password</button>
 {% endblock %}
