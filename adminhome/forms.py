@@ -154,7 +154,7 @@ class VehicleForm(forms.ModelForm):
 
     class Meta:
         model = Vehicle
-        fields = ['name', 'model', 'make', 'build', 'color', 'insurance_doc']
+        fields = ['name', 'vin', 'model', 'make', 'build', 'color', 'insurance_doc']
 
 
 class VehicleChangeForm(forms.ModelForm):
@@ -163,7 +163,7 @@ class VehicleChangeForm(forms.ModelForm):
 
     class Meta:
         model = Vehicle
-        fields = ['name', 'model', 'make', 'build', 'color', 'insurance_doc']
+        fields = ['name', 'vin', 'model', 'make', 'build', 'color', 'insurance_doc']
 
 class VerifyVehicleForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):

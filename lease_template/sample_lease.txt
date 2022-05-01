@@ -2,7 +2,7 @@ Cameron RV Lease Document
 ______________________________________________________________________________
 
 This rental agreement is made on the <lease_date>, between <user_name> and Cameron RV
-Park , with its principal office located at 1425 Turtle Creek, Lufkin, Texas 75904, referred to herein as Lessor, and
+Park for Vehicle with VIN <vin>, with its principal office located at 1425 Turtle Creek, Lufkin, Texas 75904, referred to herein as Lessor, and
 (Lessee-Guest) referred to herein as Lessee.
 Lessor leases to Lessee and Lessee leases from Lessor, for the term of this agreement, RV Spot #<parking_spot> of the
 Cameron RV Park and being hereafter referred to as RV Spot (whether one or more), and pursuant to the following terms and conditions:
@@ -19,8 +19,9 @@ Counterparts: If this agreement is executed in multiple counterparts, all counte
 
 Cameron RV Park Rules:
 
-QUIET TIME: 10 p.m. / 7 a.m - please be considerate of others. No loud music at any time.
-CHECK-OUT TIME IS 1:00 P.M.-Due to previous reservations, if you plan on staying longer, the earlier you re-register, the better your chance of keeping your site.
+QUIET TIME: 10 p.m. to 7 a.m - please be considerate of others. No loud music at any time.
+CHECK-IN TIME: 4:00 PM - Please contact us if you need to check-in early. We will consider your request and do not promise to approve early check-ins.
+CHECK-OUT TIME: 12:00 P.M. - Due to previous reservations, if you plan on staying longer, the earlier you re-register, the better your chance of keeping your site.
 SPEED LIMIT: Please observe a speed limit of no more than 5 mph.
 SEWER: Sewer connection - a positive sewer seal at both ends of sewer hose is required. Texas law requires that a sewer hose must be fastened using a connector or a rubber donut.
 CHILDREN: We want the children to be safe & have a good time, but always under the watchful eyes of a parent/guardian. Please use good judgement if you decide to leave your children at the park when you are gone. We are not responsible for their safety or welfare. You are liable for their behavior.

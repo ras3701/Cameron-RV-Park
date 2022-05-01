@@ -522,6 +522,7 @@ def generatelease(booking_id):
     lease_variables = {
         '<lease_date>': date.today().strftime("%b %d %Y"),
         '<user_name>': str(user.first_name) + " " + str(user.last_name),
+        '<vin>': str(vehicle.vin),
         '<parking_spot>': "TBD",
         '<price>': str(price),
         '<lease_frequency>': freq,
@@ -577,6 +578,7 @@ def generatesignedlease(booking_id):
     lease_variables = {
         '<lease_date>': date.today().strftime("%b %d %Y"),
         '<user_name>': str(user.first_name) + " " + str(user.last_name),
+        '<vin>': str(vehicle.vin),
         '<parking_spot>': "TBD",
         '<price>': str(price),
         '<lease_frequency>': freq,

@@ -32,6 +32,7 @@ class ParkingSpot(models.Model):
 class Vehicle(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=50, unique=True)
+    vin = models.CharField(max_length=17, unique=True)                                # Note: Since 1981, VIN numbers are always composed of 17 digits consisting of numbers and letters.
     user_id = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     make = models.CharField(max_length=50)
     model = models.CharField(max_length=50)

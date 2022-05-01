@@ -45,9 +45,8 @@ class AllBookingFilter(django_filters.FilterSet):
     booking_state = django_filters.AllValuesFilter(label='Booking State', field_name='state')
     username = django_filters.CharFilter(label='Username', field_name='vehicle_id__user_id__username')
     vehicle_name = django_filters.CharFilter(label='Vehicle Name', field_name='vehicle_id__name')
+    vehicle_vin = django_filters.CharFilter(label='Vehicle VIN', field_name='vehicle_id__vin')
 
-    # start_time = django_filters.DateFilter(widget=DateInput(attrs={'type': 'date'}), lookup_expr='start_time__gte=value')
-    # end_time = django_filters.DateFilter(widget=DateInput(attrs={'type': 'date'}))
     start_date = django_filters.DateFilter(widget=DateInput(attrs={'type': 'date'}), method='filter_start_date', label='Start Date')
     end_date = django_filters.DateFilter(widget=DateInput(attrs={'type': 'date'}), method='filter_end_date', label='End Date')
 
@@ -59,15 +58,16 @@ class AllBookingFilter(django_filters.FilterSet):
 
     class Meta:
         model = Booking
-        fields = ('parking_cat_name', 'parking_spot_name', 'is_lease_signed_by_user', 'booking_state', 'username', 'vehicle_name', 'start_date', 'end_date',)
+        fields = ('parking_cat_name', 'parking_spot_name', 'is_lease_signed_by_user', 'booking_state', 'username', 'vehicle_name', 'vehicle_vin', 'start_date', 'end_date',)
 
 class UserBookingFilter(django_filters.FilterSet):
     parking_spot_name = django_filters.AllValuesFilter(label='Parking Spot Name', field_name='parking_spot_id__name')
     vehicle_name = django_filters.CharFilter(label='Vehicle Name', field_name='vehicle_id__name')
+    vehicle_vin = django_filters.CharFilter(label='Vehicle VIN', field_name='vehicle_id__vin')
 
     class Meta:
         model = Booking
-        fields = ('parking_spot_name', 'vehicle_name',)    
+        fields = ('parking_spot_name', 'vehicle_name', 'vehicle_vin',)    
 
 
 class UnverifiedVehiclesFilter(django_filters.FilterSet):
