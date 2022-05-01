@@ -262,27 +262,26 @@ def viewbookings(request, bookingsType):
 
     if (not (request.user.is_staff or request.user.is_superuser)):
         if (bookingsType == ViewBookings.UPCOMING_BOOKINGS):
-            bookings_list = UserBookingFilter(request.GET, queryset=Booking.objects.filter(start_time__gte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)), vehicle_id__user_id=request.user))
+            bookings_list = UserBookingFilter(request.GET, queryset=Booking.objects.filter(start_time__gte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)), vehicle_id__user_id=request.user).exclude(state__in=[BookingStates.CANCELED_BEFORE_LEASE, BookingStates.CANCELED]))
         elif (bookingsType == ViewBookings.PREVIOUS_BOOKINGS):
-            bookings_list = UserBookingFilter(request.GET, queryset=Booking.objects.filter(end_time__lt=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)), vehicle_id__user_id=request.user))
+            bookings_list = UserBookingFilter(request.GET, queryset=Booking.objects.filter(end_time__lt=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)), vehicle_id__user_id=request.user).exclude(state__in=[BookingStates.CANCELED_BEFORE_LEASE, BookingStates.CANCELED]))
         elif (bookingsType == ViewBookings.CURRENT_BOOKINGS):
             bookings_list = UserBookingFilter(request.GET, queryset=
-                                    Booking.objects.filter(start_time__lte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)), end_time__gte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)), vehicle_id__user_id=request.user))
+                                    Booking.objects.filter(start_time__lte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)), end_time__gte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)), vehicle_id__user_id=request.user).exclude(state__in=[BookingStates.CANCELED_BEFORE_LEASE, BookingStates.CANCELED]))
         elif (bookingsType == ViewBookings.USER_APPROVED_BOOKINGS):
-            bookings_list = UserBookingFilter(request.GET, queryset=Booking.objects.filter(vehicle_id__user_id=request.user, state=(BookingStates.APPROVED, BookingStates.PAID, BookingStates.UNPAID)))
+            bookings_list = UserBookingFilter(request.GET, queryset=Booking.objects.filter(vehicle_id__user_id=request.user, state__in=[BookingStates.APPROVED, BookingStates.PAID, BookingStates.UNPAID]).exclude(state__in=[BookingStates.CANCELED_BEFORE_LEASE, BookingStates.CANCELED]))
         else:
-            # TODO
-            bookings_list = UserBookingFilter(request.GET, queryset=Booking.objects.filter(vehicle_id__user_id=request.user).exclude(state=(BookingStates.APPROVED, BookingStates.PAID, BookingStates.UNPAID)))
+            bookings_list = UserBookingFilter(request.GET, queryset=Booking.objects.filter(vehicle_id__user_id=request.user).exclude(state__in=[BookingStates.APPROVED, BookingStates.PAID, BookingStates.UNPAID, BookingStates.CANCELED_BEFORE_LEASE, BookingStates.CANCELED]))
     else:
         if (bookingsType == ViewBookings.UPCOMING_BOOKINGS):
-            bookings_list = BookingFilter(request.GET, queryset=Booking.objects.filter(start_time__gte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE))))
+            bookings_list = BookingFilter(request.GET, queryset=Booking.objects.filter(start_time__gte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE))).exclude(state__in=[BookingStates.CANCELED_BEFORE_LEASE, BookingStates.CANCELED]))
         elif (bookingsType == ViewBookings.PREVIOUS_BOOKINGS):
-            bookings_list = PreviousAndCurrentBookingFilter(request.GET, queryset=Booking.objects.filter(end_time__lt=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE))))
+            bookings_list = PreviousAndCurrentBookingFilter(request.GET, queryset=Booking.objects.filter(end_time__lt=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE))).exclude(state__in=[BookingStates.CANCELED_BEFORE_LEASE, BookingStates.CANCELED]))
         elif (bookingsType == ViewBookings.CURRENT_BOOKINGS):
             bookings_list = PreviousAndCurrentBookingFilter(request.GET, queryset=
-                                            Booking.objects.filter(start_time__lte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)), end_time__gte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE))))
+                                            Booking.objects.filter(start_time__lte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE)), end_time__gte=datetime.datetime.now(pytz.timezone(PYTZ_TIMEZONE))).exclude(state__in=[BookingStates.CANCELED_BEFORE_LEASE, BookingStates.CANCELED]))
         else:
-            bookings_list = AllBookingFilter(request.GET, queryset=Booking.objects.all())
+            bookings_list = AllBookingFilter(request.GET, queryset=Booking.objects.filter(~Q(state__in=[BookingStates.CANCELED_BEFORE_LEASE, BookingStates.CANCELED])))
 
     page = request.GET.get('page', 1)
     paginator = Paginator(bookings_list.qs, 2)
@@ -1038,6 +1037,7 @@ def assignoneslot(request, pk):
         vehicle.insurance_expiry_date = request.POST['insurance_expiry_date']
         vehicle.save()
         current_booking.state = BookingStates.PENDING_SLOT
+        current_booking.save()
 
     pc = []
     current_booking_slot = []
