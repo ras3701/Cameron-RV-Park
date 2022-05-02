@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 from pathlib import Path
 import os
 import dj_database_url
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,11 +25,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure--ucfwqkr)$@@#aygpx(_k0x-*8ot@9)v$u@74m0p&bugqiov(8'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = [
-    '.herokuapp.com'
+    '127.0.0.1',
+    'localhost'
 ]
+
+if 'ENV_HOST' in os.environ and os.environ['ENV_HOST'] == 'heroku':
+    DEBUG = False
+
+    ALLOWED_HOSTS = [
+        '.herokuapp.com'
+    ]
 
 # Application definition
 
@@ -91,6 +100,9 @@ DATABASES = {
         'NAME': 'test_park_db',
     }
 }
+
+if 'test' in sys.argv or 'test_coverage' in sys.argv:
+    DATABASES['default']['ENGINE'] = 'django.db.backends.sqlite3'
 
 if 'ENV_HOST' in os.environ and os.environ['ENV_HOST'] == 'heroku':
     db_from_env = dj_database_url.config(conn_max_age=600)
