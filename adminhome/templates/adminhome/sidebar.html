@@ -116,16 +116,18 @@
         <div id="flush-collapseup" class="accordion-collapse collapse" aria-labelledby="flush-up" data-bs-parent="#sidebarAccordion">
       		<div class="accordion-body">
 				<ul class="nav flex-column mb-2">
-					<li class="nav-item">
-						<a class="nav-link" href="{% url 'adminhome:make_new_admin' %}">
-							Make a New Admin
-						</a>
-					</li>
-					<li class="nav-item">
-						<a class="nav-link" href="{% url 'adminhome:view_admins' %}">
-							View Admin and User Accounts
-						</a>
-					</li>
+					{% if request.user.is_superuser %}
+						<li class="nav-item">
+							<a class="nav-link" href="{% url 'adminhome:make_new_admin' %}">
+								Make a New Admin
+							</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="{% url 'adminhome:view_admins' %}">
+								View Admin and User Accounts
+							</a>
+						</li>
+					{% endif %}
 					<li class="nav-item">
 						<a class="nav-link" href="{% url 'adminhome:unverifiedvehicles' %}">
 							Verify Vehicles
