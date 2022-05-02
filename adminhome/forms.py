@@ -199,3 +199,24 @@ class PaymentForm(forms.ModelForm):
     class Meta:
         model = Payment
         fields = ['method', 'amount']
+
+class MakeNewAdminForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        super(MakeNewAdminForm, self).__init__(*args, **kwargs)
+        self.fields['username'] = forms.CharField(label='Username', widget=forms.TextInput(attrs={'class': 'form-control'}))
+
+    def clean_username(self): 
+        try:
+            User.objects.get(username=self.cleaned_data['username'])
+        except User.DoesNotExist:
+            raise forms.ValidationError('An user account associated to the username entered does not exist! Please try again.')
+        return self.cleaned_data['username']
+
+# class MakeNewAdminForm(forms.ModelForm):
+#     def __init__(self, *args, **kwargs):
+#         super(MakeNewAdminForm, self).__init__(*args, **kwargs)
+#         self.fields['username'].widget = forms.TextInput(attrs={'class': 'form-control'})
+    
+#     class Meta:
+#         model = User
+#         fields = ['username',]

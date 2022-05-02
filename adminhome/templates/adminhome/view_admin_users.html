@@ -1,0 +1,30 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+
+   <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+      <h1 class="h2">Admin User Accounts</h1>
+   </div>
+   <form method="get">
+      <div class="container">
+          {{filter.form.as_p}}
+          <input type="submit" value="Filter" class="btn btn-outline-dark shadow-2 mb-4" style="max-width: 10rem;"/>
+      </div>
+  </form>
+
+   {% for admin in admin_users_paginated %}
+      <div class="card cardhover mb-2">
+         <div class="card-body">
+            <h5 class="card-title d-flex justify-content-between align-items-center">
+               {{ admin.first_name }} {{ admin.last_name }}
+            </h5>
+            <h6 class="card-subtitle mb-2 text-muted">Username: {{ admin.username }}</h6>
+            <h6 class="card-subtitle mb-2 text-muted">Email Address: {{ admin.email }}</h6>
+            
+         </div>
+      </div>
+   {% endfor %}
+
+   {% include "adminhome/paginator.html" with paginator=admin_users_paginated %}
+
+{% endblock content %}

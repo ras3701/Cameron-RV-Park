@@ -23,14 +23,15 @@ import boto3
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
+from django.contrib.auth import login, logout, authenticate, update_session_auth_hash, get_user_model
+from django.contrib.auth.models import User
 from django.contrib import messages
 
 from .models import Booking, ParkingSpot, ParkingCategory, Vehicle, BillDetail, Payment
-from .filters import ParkingCatergoryFilter, ParkingSpotFilter, BookingFilter, PreviousAndCurrentBookingFilter, AllBookingFilter, UnverifiedVehiclesFilter, UserBookingFilter
+from .filters import ParkingCatergoryFilter, ParkingSpotFilter, BookingFilter, PreviousAndCurrentBookingFilter, AllBookingFilter, UnverifiedVehiclesFilter, UserBookingFilter, UserFilter
 from .forms import BookingForm, ParkingCategoryForm, ParkingSpotForm, HomeForm, CustomUserForm, \
                    CustomUserCreationForm, CheckAvailabilityDateRangeForm, VehicleChangeForm, BillDetailForm, \
-                   PaymentForm, ShowSheduleDateRangeForm
+                   PaymentForm, ShowSheduleDateRangeForm, MakeNewAdminForm
 from .enums import BookingStates, ViewBookings
 from .utils import isPreviousBooking, isCurrentBooking, TIME_ZONE, CHECK_IN_TIME, CHECK_OUT_TIME, PYTZ_TIMEZONE
 
@@ -720,6 +721,53 @@ def doedit(request):
         s3.Bucket(settings.AWS_BUCKET_NAME).put_object(Key=('media/%s.jpg' % c), Body=request.FILES[c])
 
     return HttpResponseRedirect(reverse('adminhome:edithome'))
+
+def make_new_admin(request):
+    # NOTE: Only super-user should be able to make any user an admin.
+    if(not (request.user.is_authenticated and (request.user.is_superuser))):
+        return HttpResponseRedirect(reverse('adminhome:index'))
+    
+    if request.method == "POST":
+        form = MakeNewAdminForm(request.POST)
+        if form.is_valid():
+            req_username = form.cleaned_data.get('username')
+            req_user = User.objects.get(username=req_username)
+
+            if req_user is not None:
+                if req_user.is_staff:   # TODO: Review logic
+                    messages.error(request, f"User {req_username} is already an admin.")
+                else:
+                    req_user.is_staff = True
+                    req_user.save()
+                    messages.success(request, f"User {req_username} is now an admin.")
+                return HttpResponseRedirect(reverse('adminhome:adminhome'))
+    else:
+        form = MakeNewAdminForm
+    
+    return render(request=request,
+                  template_name="adminhome/make_new_admin.html",
+                  context={"form": form})
+
+def view_admins(request):
+    # NOTE: Only super-user should be able to view admin accounts.
+    if(not (request.user.is_authenticated and (request.user.is_superuser))):
+        return HttpResponseRedirect(reverse('adminhome:index'))
+
+    admin_users = UserFilter(request.GET, queryset=User.objects.all())
+
+    page = request.GET.get('page', 1)
+    paginator = Paginator(admin_users.qs, 2)
+
+    try:
+        admin_users_paginated = paginator.page(page)
+    except PageNotAnInteger:
+        admin_users_paginated = paginator.page(1)
+
+    return render(request, "adminhome/view_admin_users.html",
+                    {
+                      'filter': admin_users,
+                      'admin_users_paginated': admin_users_paginated
+                    })
 
 
 def index(request):
