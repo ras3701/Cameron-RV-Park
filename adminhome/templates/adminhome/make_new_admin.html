@@ -1,0 +1,16 @@
+{% extends 'adminhome.html' %}
+
+
+{% block content %}
+
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Add a New Admin Account</h1>
+    </div>
+    
+    <form method="POST">
+      {% csrf_token %}
+      {{ form }}
+      <button type="adminhome/make_new_admin" class="btn btn-primary shadow-2 mb-4" value="Submit" onclick="return confirm('Are you sure?')">Submit</button>
+  </form>
+
+{% endblock content %}

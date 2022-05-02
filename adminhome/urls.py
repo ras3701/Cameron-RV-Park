@@ -68,4 +68,7 @@ urlpatterns = [
     path('adminhome/verifyvehicle/<int:pk>/', views.verifyvehicle, name='verifyvehicle'),
     path('adminhome/unverifiedvehicles', views.unverifiedvehicles, name='unverifiedvehicles'),
 
+    path('adminhome/makenewadmin', views.make_new_admin, name='make_new_admin'),
+    path('adminhome/viewadminaccounts', views.view_admins, name='view_admins'),
+
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -3,6 +3,7 @@ from django.forms import DateInput, widgets
 import django_filters
 from .models import  ParkingCategory, ParkingSpot, Booking, Vehicle
 from .forms import DatePickerInput
+from django.contrib.auth.models import User
 
 class ParkingCatergoryFilter(django_filters.FilterSet):
     ps_status = django_filters.BooleanFilter(label='Is Parking Category Active', field_name='is_active')
@@ -76,3 +77,10 @@ class UnverifiedVehiclesFilter(django_filters.FilterSet):
     class Meta:
         model = Vehicle
         fields = ('username',)
+
+class UserFilter(django_filters.FilterSet):
+    is_staff = django_filters.BooleanFilter(label='Display only admin user accounts: ', field_name='is_staff')
+
+    class Meta:
+        model = User
+        fields = ('is_staff',)
